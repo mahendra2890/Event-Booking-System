@@ -29,7 +29,6 @@ class UserAdmin(BaseUserAdmin):
                     'is_active',
                     'is_staff',
                     'is_superuser',
-                    'is_organiser',
                 )
             }
         ),
@@ -55,7 +54,6 @@ class UserAdmin(BaseUserAdmin):
                     'password1',
                     'password2',
                     'name',
-                    'is_organiser',
                     'is_staff',
                     'is_active',
                     'is_superuser',

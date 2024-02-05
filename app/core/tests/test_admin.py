@@ -22,7 +22,6 @@ class AdminSiteTests(TestCase):
             email='user@example.com',
             password='userpass123',
             name='Test User',
-            is_organiser=True,
         )
 
     def test_users_list(self):
