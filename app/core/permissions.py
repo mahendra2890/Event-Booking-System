@@ -1,5 +1,6 @@
-# permissions.py
-
+"""
+Permission classes
+"""
 from rest_framework import permissions
 
 class IsEventOrganizer(permissions.BasePermission):

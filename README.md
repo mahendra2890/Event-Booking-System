@@ -7,3 +7,6 @@ create tests:
     event can only be created by organisers
     organizer can only update events created by themselves
     ticket can only be created by the organiser of the event
+
+
+passsword everywhere: pass@123

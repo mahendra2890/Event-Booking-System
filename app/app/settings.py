@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'drf_spectacular',
     'user',
+    'events',
 ]
 
 MIDDLEWARE = [
@@ -137,6 +138,9 @@ AUTH_USER_MODEL = 'core.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework.authentication.TokenAuthentication',
+    # )
 }
 
 # ALLOWED_HOSTS = ['0.0.0.0'] : this will allow you to access the app on '0.0.0.0:8000' too in addition to 127.0.0.1:8000

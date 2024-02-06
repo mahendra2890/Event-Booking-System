@@ -3,6 +3,7 @@ Django admin modifications
 """
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
 from django.utils.translation import gettext_lazy as _
 
 from core import models
@@ -18,7 +19,8 @@ class UserAdmin(BaseUserAdmin):
             {
                 'fields': (
                     'email',
-                    'password'
+                    'password',
+                    'role',
                 )
             }
         ),
@@ -57,6 +59,7 @@ class UserAdmin(BaseUserAdmin):
                     'is_staff',
                     'is_active',
                     'is_superuser',
+                    'role'
                 )
             }
         ),
@@ -64,3 +67,8 @@ class UserAdmin(BaseUserAdmin):
 
 
 admin.site.register(models.User, UserAdmin)
+admin.site.register(models.Booking)
+admin.site.register(models.Ticket)
+admin.site.register(models.Event)
+admin.site.register(models.EventOrganizer)
+admin.site.register(models.Customer)

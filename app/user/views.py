@@ -1,3 +1,7 @@
+"""
+User Views
+"""
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -11,62 +15,30 @@ from core.models import *
 
 
 class CreateUserView(APIView):
+    """Views for create user API"""
     serializer_class = UserApiCreateSerializer
+
     def post(self, request, *args, **kwargs):
+        """Create a new user - custmor or event organizer"""
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            serializer = UserSerializer(data=request.data)
-            if serializer.is_valid():
-                user = serializer.save()
-                if user.role == 'customer':
-                    customer = Customer.objects.create(user=user, customer_specific_field='thiscamefromview')
-                elif user.role == 'organizer':
-                    event_organizer = EventOrganizer.objects.create(user=user)
-
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+            role = serializer.validated_data.get('role', 'customer')
+            user = User.objects.create_user(email=email, password=password, role=role)
+            if role == 'customer':
+                customer = Customer.objects.create(user=user, customer_specific_field='thiscamefromview')
+                customer_serializer = CustomerSerializer(customer)  # Serialize the customer object
+                return Response(customer_serializer.data, status=status.HTTP_201_CREATED)
+            elif role == 'organizer':
+                event_organizer = EventOrganizer.objects.create(user=user)
+                event_organizer_serializer = EventOrganizerSerializer(event_organizer)
+                return Response(event_organizer_serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-# class CreateUserView(generics.CreateAPIView):
-#     """Create a new user in the system"""
-#     serializer_class = UserSerializer
-
-
-#     def create(self, request, *args, **kwargs):
-#         # Extract role from the request data
-#         role = request.data.pop('role', 'customer')
-
-#         # Validate the role
-#         if role not in ['organizer', 'customer']:
-#             raise serializers.ValidationError({'role': 'Invalid role'})
-
-#         # Create a user with the specified role
-#         user_serializer = self.get_serializer(data=request.data)
-#         user_serializer.is_valid(raise_exception=True)
-#         user = user_serializer.save(role=role)
-
-#         # Additional data for EventOrganizer
-#         if user.role == 'organizer':
-#             organizer_data = {'user': user.pk}
-#             organizer_serializer = EventOrganizerSerializer(data=organizer_data)
-#             organizer_serializer.is_valid(raise_exception=True)
-#             organizer_serializer.save()
-
-#         # Additional data for Customer
-#         elif user.role == 'customer':
-#             customer_data = {'user': user.pk}
-#             customer_serializer = CustomerSerializer(data=customer_data)
-#             customer_serializer.is_valid(raise_exception=True)
-#             customer_serializer.save()
-
-#         headers = self.get_success_headers(user_serializer.data)
-#         return Response(user_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-
-
 class CreateTokenView(ObtainAuthToken):
-    """Create a new token for user"""
+    """Create a token for user"""
     serializer_class = AuthTokenSerializer
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
     #this makes sure we get this in browsable api
@@ -77,23 +49,50 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    """Get to get the current user, and Patch to update user"""
     allowed_methods = ['GET', 'PATCH']
-    # queryset = get_user_model().objects.all()  # Set the queryset to the user model
 
     def get_object(self):
+        """Get user"""
+        print(self.request.user.email)
         return self.request.user
 
     def update(self, request, *args, **kwargs):
         # Raise a validation error if 'role' is provided during update
-        current_role = self.request.user.role
-        requested_role = request.data.get('role')
+        mutable_request = dict(request.data)
 
-        # Check if 'role' is provided and if it matches the current role
-        if requested_role is not None and requested_role != current_role:
-            raise serializers.ValidationError({'role': 'Role cannot be updated to a different value.'})
+        requested_role = mutable_request.get('role')
+        requested_email = mutable_request.get('email')
 
-        # If 'role' matches, remove it from the request data before passing to the serializer
-        if 'role' in request.data:
-            del request.data['role']
+        # Check if 'email' is provided
+        if requested_email is not None:
+            raise serializers.ValidationError({'email': 'Email cannot be updated'})
 
-        return super().update(request, *args, **kwargs)
+        # Check if 'role' is provided
+        if requested_role is not None:
+            raise serializers.ValidationError({'role': 'Role cannot be updated'})
+
+        user_instance = self.get_object()
+        serializer = self.get_serializer(user_instance, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            # Update the user instance
+            serializer.save()
+
+            # Update associated Customer or EventOrganizer if applicable
+            role = user_instance.role
+            if role == 'customer':
+                customer_instance = user_instance.customer
+                customer_serializer = CustomerSerializer(customer_instance, data=request.data.get('customer', {}), partial=True)
+                if customer_serializer.is_valid():
+                    customer_serializer.save()
+
+            elif role == 'organizer':
+                organizer_instance = user_instance.event_organizer
+                organizer_serializer = EventOrganizerSerializer(organizer_instance, data=request.data.get('event_organizer', {}), partial=True)
+                if organizer_serializer.is_valid():
+                    organizer_serializer.save()
+
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
