@@ -35,7 +35,7 @@ class EventListCreateViewTests(TestCase):
         """Test event organizer can create event"""
 
         payload = {
-            'date': '2024-02-05',
+            'date': '2024-02-06T21:37:10.409580Z',
             'venue': 'Test Venue',
         }
 
@@ -52,8 +52,8 @@ class EventListCreateViewTests(TestCase):
         self.assertEqual(EventOrganizer.objects.count(), 1)
         self.assertEqual(created_event.organizer.id, self.organizer.id)
 
-    def test_create_event_custome_fails(self):
-        """Test event organizer can create event"""
+    def test_create_event_customer_fails(self):
+        """Test customer can't create event"""
         self.client.force_authenticate(user=self.user)
         payload = {
             'date': '2024-02-05',
@@ -62,12 +62,13 @@ class EventListCreateViewTests(TestCase):
 
         response = self.client.post(CREATE_EVENT_URL, payload)
         print(response.data)
+        print(response.status_code)
         self.assertNotEqual(response.status_code, status.HTTP_201_CREATED)
 
 
-    def test_create_event_invalid_input(self):
-        payload = {}  # Missing required fields
+    def test_create_event_default_input(self):
+        """Test event organizer can create event with default data"""
+        payload = {}
         response = self.client.post(CREATE_EVENT_URL, payload)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 

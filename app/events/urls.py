@@ -9,4 +9,5 @@ urlpatterns = [
     path('create/', EventCreateView.as_view(), name='create'),
     path('', EventListView.as_view(), name='list'),
     path('myevents/', MyEventListView.as_view(), name='listmyevents'),
+    path('<int:pk>/', MyEventRetrieveUpdateView.as_view(), name='retrieve-update'),
 ]

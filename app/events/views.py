@@ -71,3 +71,17 @@ class MyEventListView(generics.ListAPIView):
             return Event.objects.filter(organizer=event_organizer)
         except EventOrganizer.DoesNotExist:
             return Event.objects.none()
+
+class MyEventRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = EventSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    allowed_methods = ['GET', 'PATCH']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            event_organizer = EventOrganizer.objects.get(user=user)
+            return Event.objects.filter(organizer=event_organizer)
+        except EventOrganizer.DoesNotExist:
+            return Event.objects.none()

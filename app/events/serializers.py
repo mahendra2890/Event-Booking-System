@@ -14,24 +14,11 @@ class EventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Event
-        fields = ['id', 'organizer', 'date', 'venue', 'tickets']
-        read_only_fields = ['organizer']
+        fields = ['id', 'organizer', 'date', 'venue', 'tickets', 'description', 'title']
+        read_only_fields = ['organizer', 'id']
 
     def create(self, validated_data):
-        print(validated_data)
-        print(self.context.keys())
-        print(self.context['request'])
-        print(self.context['view'])
-        print(self.context['format'])
         user = self.context['request'].user
-        # if user.role == 'organizer':
-        #     event_organizer = user
-        # else:
-        #     print(user.role)
-        #     print(user.email)
-        #     print(user.role)
-
-        #     raise serializers.ValidationError("Current user is not mapped to an event organizer.")
         try:
             event_organizer = EventOrganizer.objects.get(user=user)
         except EventOrganizer.DoesNotExist:
