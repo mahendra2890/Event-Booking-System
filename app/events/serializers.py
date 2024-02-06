@@ -34,3 +34,13 @@ class EventSerializer(serializers.ModelSerializer):
         return event
 
 
+class TicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ['id', 'event', 'ticket_type', 'price', 'availability']
+        read_only_fields = ['id', 'event']  # Ensure event cannot be changed when updating
+
+class CreateTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ['ticket_type', 'price', 'availability']

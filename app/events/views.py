@@ -1,8 +1,8 @@
 # views.py
 
 from rest_framework import generics, permissions
-from core.models import Event, EventOrganizer
-from events.serializers import EventSerializer
+from core.models import Event, EventOrganizer, Ticket
+from events.serializers import EventSerializer, TicketSerializer, CreateTicketSerializer
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework import authentication
@@ -72,11 +72,24 @@ class MyEventListView(generics.ListAPIView):
         except EventOrganizer.DoesNotExist:
             return Event.objects.none()
 
-class MyEventRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+
+class MyEventRetrieveView(generics.RetrieveAPIView):
+    serializer_class = EventSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        try:
+            return Event.objects
+        except Exception as e:
+            raise e
+
+
+class MyEventUpdateView(generics.UpdateAPIView):
     serializer_class = EventSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
-    allowed_methods = ['GET', 'PATCH']
+    allowed_methods = ['PATCH']
 
     def get_queryset(self):
         user = self.request.user
@@ -85,3 +98,46 @@ class MyEventRetrieveUpdateView(generics.RetrieveUpdateAPIView):
             return Event.objects.filter(organizer=event_organizer)
         except EventOrganizer.DoesNotExist:
             return Event.objects.none()
+
+
+
+# class MyEventRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+#     serializer_class = EventSerializer
+#     authentication_classes = [authentication.TokenAuthentication]
+#     permission_classes = [permissions.IsAuthenticated]
+#     allowed_methods = ['GET', 'PATCH']
+
+#     def get_queryset(self):
+#         user = self.request.user
+#         try:
+#             event_organizer = EventOrganizer.objects.get(user=user)
+#             return Event.objects.filter(organizer=event_organizer)
+#         except EventOrganizer.DoesNotExist:
+#             return Event.objects.none()
+
+
+class TicketListView(generics.ListAPIView):
+    serializer_class = TicketSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        event_id = self.kwargs.get('event_id')
+        return Ticket.objects.filter(event_id=event_id)
+
+class TicketCreateView(generics.CreateAPIView):
+    serializer_class = CreateTicketSerializer
+
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        event_id = self.kwargs.get('event_id')
+        event = Event.objects.get(pk=event_id)
+        serializer.save(event=event)
+
+class TicketUpdateView(generics.UpdateAPIView):
+    queryset = Ticket.objects.all()
+    serializer_class = CreateTicketSerializer  # Using the same serializer as create view
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    allowed_methods = ['PATCH']
