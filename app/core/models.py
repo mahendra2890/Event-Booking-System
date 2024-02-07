@@ -10,6 +10,7 @@ from django.contrib.auth.models import (
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.conf import settings
+from core.tasks import *
 
 
 class UserManager(BaseUserManager):
@@ -90,6 +91,21 @@ class Event(models.Model):
     venue = models.CharField(max_length=255, default='Venue pura')
     description = models.TextField(default="Its a surprise event")
     title = models.CharField(max_length=255, default="Surprise Event")
+    def save(self, *args, **kwargs):
+        message =  "event updated"
+        if self._state.adding:
+            message = "event updated"
+
+        super().save(*args, **kwargs)
+        send_event_update_notification(self.id, message)
+
+    def delete(self, *args, **kwargs):
+        event_id = self.id
+        message = "deleted event"
+        super().delete(*args, **kwargs)
+
+        # Call the Celery task after deleting the event
+        send_event_update_notification(event_id, message)
 
 
 class Ticket(models.Model):
@@ -111,9 +127,13 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         """Ensure availability-conformance"""
         with transaction.atomic():
+            message = "booking updated"
             if self._state.adding:
                 # If it's a new booking, set quantity_difference to the requested quantity
                 quantity_difference = self.quantity
+                message = "booking created"
+
+                # send_booking_confirmation_email.delay(self.id, "booking created")
             else:
                 # Retrieve the previous quantity
                 previous_booking = Booking.objects.select_for_update().get(pk=self.pk)
@@ -129,13 +149,16 @@ class Booking(models.Model):
             self.ticket.availability -= quantity_difference
             self.ticket.save()
             super().save(*args, **kwargs)
+            send_booking_confirmation_email.delay(self.id, message)
 
 
 
     def delete(self, *args, **kwargs):
         with transaction.atomic():
             # Calculate the quantity being deleted
+            booking_id = self.id
             quantity_deleted = self.quantity
+            message = f"deleted quantity{quantity_deleted}"
 
             # Delete the booking
             super().delete(*args, **kwargs)
@@ -143,4 +166,5 @@ class Booking(models.Model):
             # Update the ticket availability
             self.ticket.availability += quantity_deleted
             self.ticket.save()
+            send_booking_confirmation_email.delay(booking_id, message)
 
