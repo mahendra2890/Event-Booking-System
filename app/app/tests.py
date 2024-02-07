@@ -1,22 +1,23 @@
-"""
-Sample tests
-"""
-from django.test import SimpleTestCase
-
-from app import calc
+from django.test import TestCase
+from unittest.mock import patch
+from core.tasks import send_booking_confirmation_email, send_event_update_notification
 
 
-class CalcTests(SimpleTestCase):
-    """Test the calc module."""
+class TestCeleryTasks(TestCase):
 
-    def test_add_numbers(self):
-        """Test adding two numbers."""
-        res = calc.add(1, 2)
+    @patch('events.tasks.send_booking_confirmation_email')
+    def test_send_booking_confirmation_email_task(self, mock_task):
+        # Call the task with sample booking ID
+        task_id = send_booking_confirmation_email.delay(123)
 
-        self.assertEqual(res, 3)
+        # result = AsyncResult(task_id)
 
-    def test_subtract_numbers(self):
-        """Test subtracting numbers"""
+        # mock_task.assert_called_once_with(123)
 
-        res = calc.subtract(1, 2)
-        self.assertEqual(res, -1)
+    @patch('events.tasks.send_event_update_notification')
+    def test_send_event_update_notification_task(self, mock_task):
+        # Call the task with sample event ID
+        send_event_update_notification.delay(456)
+
+        # Assert that the task was called with the correct argument
+        # mock_task.assert_called_once_with(456)

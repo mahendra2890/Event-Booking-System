@@ -143,5 +143,7 @@ REST_FRAMEWORK = {
     #     'rest_framework.authentication.TokenAuthentication',
     # )
 }
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+
 
 # ALLOWED_HOSTS = ['0.0.0.0'] : this will allow you to access the app on '0.0.0.0:8000' too in addition to 127.0.0.1:8000

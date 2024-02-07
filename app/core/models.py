@@ -1,7 +1,7 @@
 """
 Database Models
 """
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -63,7 +63,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class EventOrganizer(models.Model):
     """Model for Event Organizers. Can add fields other than User"""
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='eventorganizer')
     def save(self, *args, **kwargs):
         """Ensure role-conformance"""
         if self.user.role != 'organizer':
@@ -106,11 +106,41 @@ class Booking(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=5)
+
+
     def save(self, *args, **kwargs):
         """Ensure availability-conformance"""
-        if self.quantity > self.ticket.availability or self.quantity <= 0:
-            raise ValidationError("Quantity not allowed, allowed quantity > 0 and <= {}".format(self.ticket.availability))
-        """Ensure quantity-update"""
-        self.ticket.availability -= self.quantity
-        self.ticket.save()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            if self._state.adding:
+                # If it's a new booking, set quantity_difference to the requested quantity
+                quantity_difference = self.quantity
+            else:
+                # Retrieve the previous quantity
+                previous_booking = Booking.objects.select_for_update().get(pk=self.pk)
+                previous_quantity = previous_booking.quantity
+                quantity_difference = self.quantity - previous_quantity
+
+            print(quantity_difference)
+            print(self.quantity)
+            if quantity_difference > self.ticket.availability or self.quantity <= 0:
+                raise ValidationError("Quantity not allowed")
+
+            """Ensure quantity-update"""
+            self.ticket.availability -= quantity_difference
+            self.ticket.save()
+            super().save(*args, **kwargs)
+
+
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            # Calculate the quantity being deleted
+            quantity_deleted = self.quantity
+
+            # Delete the booking
+            super().delete(*args, **kwargs)
+
+            # Update the ticket availability
+            self.ticket.availability += quantity_deleted
+            self.ticket.save()
+
