@@ -1,3 +1,5 @@
+"""Tests for booking APIs"""
+
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -9,7 +11,7 @@ class BookingTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-        # Create Event Organizer
+        """Create Event Organizer"""
         self.organizer_user = User.objects.create_user(email='organizer@example.com', password='password', role='organizer')
         self.organizer = EventOrganizer.objects.create(user=self.organizer_user)
 
@@ -34,11 +36,11 @@ class BookingTestCase(TestCase):
         self.assertEqual(updated_ticket.availability, expected_availability)
 
     def test_booking_tickets_concurrently(self):
-        # Concurrently book tickets for the same event
+        #"""Concurrently book tickets for the same event """
         booking_data1 = {'quantity': 3}
         booking_data2 = {'quantity': 4}
 
-        # Use Django's reverse function to generate the URL for booking tickets
+
         url = reverse('booking:booking-book', kwargs={'event_id': self.event.pk, 'ticket_id': self.ticket.pk})
 
         # Perform concurrent booking requests
@@ -53,10 +55,8 @@ class BookingTestCase(TestCase):
         updated_ticket = Ticket.objects.get(pk=self.ticket.pk)
         self.assertTicketAvailability(self.ticket, 3)  # Remaining tickets after customer 1 booking
 
-
-
     def test_booking_tickets_invalid_quantity(self):
-        # Attempt to book tickets with an invalid quantity
+        """Attempt to book tickets with an invalid quantity"""
         invalid_booking_data = {'quantity': -1}  # Invalid quantity
 
         # Generate the URL for booking tickets
@@ -72,7 +72,7 @@ class BookingTestCase(TestCase):
         self.assertTicketAvailability(self.ticket, 10)
 
     def test_booking_tickets_insufficient_availability(self):
-        # Attempt to book tickets with quantity exceeding availability
+        """ Attempt to book tickets with quantity exceeding availability"""
         booking_data = {'quantity': 20}  # Quantity exceeds availability
 
         # Generate the URL for booking tickets
@@ -88,7 +88,7 @@ class BookingTestCase(TestCase):
         self.assertTicketAvailability(self.ticket, 10)
 
     def test_cancel_booking(self):
-        # Create a booking
+        """ Create a booking """
         booking = Booking.objects.create(customer=self.customer1, event=self.event, ticket=self.ticket, quantity=2)
 
         # Generate the URL for canceling the booking
@@ -105,7 +105,7 @@ class BookingTestCase(TestCase):
         self.assertTicketAvailability(self.ticket, 10)
 
     def test_cancel_booking_unauthorized(self):
-        # Create a booking
+        """ Create a booking """
         booking = Booking.objects.create(customer=self.customer1, event=self.event, ticket=self.ticket, quantity=2)
 
         # Generate the URL for canceling the booking
@@ -125,9 +125,8 @@ class BookingTestCase(TestCase):
 
         # Check ticket availability remains unchanged
 
-
     def test_cancel_nonexistent_booking(self):
-        # Attempt to cancel a nonexistent booking
+        """Attempt to cancel a nonexistent booking """
         nonexistent_booking_id = 9999  # Nonexistent booking ID
 
         # Generate the URL for canceling the booking
@@ -142,4 +141,26 @@ class BookingTestCase(TestCase):
         # Check ticket availability remains unchanged
         self.assertTicketAvailability(self.ticket, 10)
 
-    # Add more test cases as needed for other functionalities
+    def test_create_booking_success(self):
+        """ Ensure initial ticket availability """
+        initial_availability = self.ticket.availability
+
+        # Valid booking data
+        booking_data = {'quantity': 2}
+
+        # URL for booking tickets
+        url = reverse('booking:booking-book', kwargs={'event_id': self.event.pk, 'ticket_id': self.ticket.pk})
+
+        # Perform booking request with customer token
+        response = self.client.post(url, booking_data, HTTP_AUTHORIZATION='Token ' + self.customer1_token.key)
+
+        # Check response
+        self.assertEqual(response.status_code, 201)  # Created
+
+        # Check ticket availability after booking
+        updated_ticket = Ticket.objects.get(pk=self.ticket.pk)
+        self.assertEqual(updated_ticket.availability, initial_availability - 2)  # Quantity deducted from availability
+
+        # Check booking record created
+        self.assertTrue(Booking.objects.filter(customer=self.customer1, event=self.event, ticket=self.ticket, quantity=2).exists())
+
