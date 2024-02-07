@@ -1,4 +1,4 @@
-# serializers.py
+"""Serializers for Event API view"""
 
 from rest_framework import serializers
 from core.models import Event, Ticket, EventOrganizer
