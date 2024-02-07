@@ -74,7 +74,7 @@ To see available APIs and run (to see how to run : Go to point 3):
     2. The admin page can be used to see how the objects are created and stored.
 
 
-3. How to use?:
+3. How to use:
     1. Create user : create a customer user and an organizer user.
     2  Create Token for the user you want to authorize with: On top right corner on swagger page -> click on Authorize, and in APIkey(this is how the token can be setup on postman, if you prefer that): The API key will be : Token {token_string_generated_from_token_api}
     3. Now that you are authorized, you can use get user endpoint and see details of the user you have authorized with.
