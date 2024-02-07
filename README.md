@@ -5,6 +5,7 @@ Event Organizers can create, read, and update events, while Customers can book t
 The API access is restricted based on the user type.
 
 Database Design:
+
 1. Tables:
     - EventOrganizers: Information about the event organizers.
     - Customers: Information about customers.
