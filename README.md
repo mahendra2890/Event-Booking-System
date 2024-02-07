@@ -39,7 +39,7 @@ To stop the server: docker-compose down
 The API should be accessible on local host now.
 To see available APIs and run (to see how to run : Go to point 3):
 
-1. visit: http://127.0.0.1:8000/api/docs/ :
+1. Visit: http://127.0.0.1:8000/api/docs/ :
     This is open up swagger page, where you will see all available APIs, some APIs need authorization to be accessed, and some can be accessed without authorization also.
     1. User Endpoints:
         1. POST ​/api​/user​/create​/: used to create a user: for customer, I have enabled one more field that can be sent as empty - in case we want different inputs for different users
@@ -69,7 +69,7 @@ To see available APIs and run (to see how to run : Go to point 3):
         6. PUT ​/api​/booking​/{id}​/update​/                     : update booking (whole object is replaced - haven't been tested, not advised to use)
 
 
-2. visit: http://127.0.0.1:8000/admin/ :
+2. Visit: http://127.0.0.1:8000/admin/ :
     1. You will need a superuser to log in here, which can be created by running command: docker-compose run --rm app sh -c "python manage.py createsuperuser". The email id and password you provide here can be used to log into admin page.
     2. The admin page can be used to see how the objects are created and stored.
 
